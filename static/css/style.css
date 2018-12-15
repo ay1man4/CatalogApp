@@ -1,0 +1,11 @@
+.bg-dark {
+    background-color: midnightblue !important;
+} 
+
+.navbar-dark .navbar-brand {
+    color: white !important;
+} 
+
+.container{
+    margin-top: 60px;
+}

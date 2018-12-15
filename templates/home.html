@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Catalog{% endblock %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-4">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between">
+                <h5>Categories</h5>
+                <a class="btn btn-primary btn-sm" href="{{url_for('new_category_html')}}">
+                    <i class="fas fa-plus-square"></i>
+                    New
+                </a>
+
+            </div>
+            <div class="card-body px-0 py-0">
+                <div class="list-group">
+                    {% for category in categories %}
+                    <a href="{{ url_for('show_category_html', category=category.name) }}" class="list-group-item list-group-item-action">{{category.name}}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div class="col-8">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between">
+                <h5>Latest Items</h5>
+            </div>
+            <div class="card-body px-0 py-0">
+                <ul class="list-group">
+                    {% for item in latest_items %}
+                    <li class="list-group-item">{{item.name}} <span style="color:gray">({{item.category.name}})</span></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}
