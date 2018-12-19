@@ -17,6 +17,7 @@ def new_category(name):
     category.name = name
     session.add(category)
     session.commit()
+    return session.query(Category).filter(Category.name==name).first()
 
 def get_category_items(category):
     return session.query(Category.items).filter(Category.name == category)
@@ -52,5 +53,9 @@ def edit_item(old_category_name, old_item_name, name, description, category_name
 def del_item(category_name, item_name):
     category = session.query(Category).filter(Category.name==category_name).first()
     item = session.query(Item).filter(Item.category==category, Item.name==item_name).first()
-    session.delete(item)
-    session.commit()
+    if item is not None:
+        session.delete(item)
+        session.commit()
+        return True
+    else:
+        return False

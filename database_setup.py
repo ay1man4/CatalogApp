@@ -18,6 +18,15 @@ class Category(Base):
     @property
     def items_count(self):
         return len(self.items)
+    
+    @property
+    def serialize(self):
+        return{
+            'id': self.id,
+            'name': self.name,
+            'items_count': self.items_count,
+            'items': [i.serialize for i in self.items],
+        }
 
 class Item(Base):
     __tablename__ = 'item'
@@ -29,6 +38,15 @@ class Item(Base):
 
     category_id = Column(Integer,ForeignKey('category.id'))
     category = relationship(Category)
+
+    @property
+    def serialize(self):
+        return{
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'cat_id': self.category_id,
+        }
 
 
 engine = create_engine('sqlite:///db.db?check_same_thread=False')
