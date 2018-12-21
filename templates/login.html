@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Catalog{% endblock %}
+{% block head %}
+{{ super() }}
+<!--LOAD PRE-REQUISITES FOR GOOGLE SIGN IN -->
+<script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+<script src="//apis.google.com/js/platform.js?onload=start"> </script>
+<!-- END PRE-REQUISITES FOR GOOGLE SIGN IN -->
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-6">
+        <div class="card">
+            <h5 class="card-header">Sign in</h5>
+            <div class="card-body d-flex flex-column">
+                <!-- GOOGLE PLUS SIGN IN BUTTON-->
+                <div id="signinButton">
+                    <span class="g-signin"
+                        data-scope="openid"
+                        data-clientid="721799995040-adu5tskvn48h31cftlsha585ghct74m4.apps.googleusercontent.com"
+                        data-redirecturi="postmessage"
+                        data-accesstype="offline"
+                        data-cookiepolicy="single_host_origin"
+                        data-callback="signInCallback"
+                        data-approvalprompt="force">
+                    </span>
+                </div>
+
+                <!--END GOOGLE PLUS SIGN IN BUTTON -->
+
+                <!-- FACEBOOK SIGN IN BUTTON-->
+                <!-- <div id="fb-root"></div>
+                <script>(function (d, s, id) {
+                        var js, fjs = d.getElementsByTagName(s)[0];
+                        if (d.getElementById(id)) return;
+                        js = d.createElement(s); js.id = id;
+                        js.src = 'https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v3.2&appId=527857767706825&autoLogAppEvents=1';
+                        fjs.parentNode.insertBefore(js, fjs);
+                    }(document, 'script', 'facebook-jssdk'));</script>
+                <div class="fb-login-button" data-max-rows="1" data-size="large" data-button-type="login_with"
+                    data-show-faces="false" data-auto-logout-link="false" data-use-continue-as="false">
+                    Sign in
+                </div> -->
+                <!--END FACEBOOK SIGN IN BUTTON -->
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function signInCallback(authResult){
+        if (authResult['code']){
+            // Hide the sign-in button now that the user is authorized
+            // $('#signinButton').attr('style', 'display: none');
+
+            // Send the one-time-use code to the server, if the server responds, 
+            //write a 'login successful' message to the web page and then redirect back to 
+            //the main restaurants page
+            $.ajax(
+                {
+                    type: 'POST',
+                    url: "{{ url_for('gconnect', state=STATE) }}",
+                    processData: false,
+                    data: authResult['code'],
+                    contentType: 'application/octet-stream; charset=utf-8',
+                    success: function(result) {
+                        // Handle or verify the server response if necessary.
+                        if(result){
+                            window.location.href = "{{ url_for('show_catalog_html') }}";
+                        }
+                    }
+                }
+            )
+        }else if (authResult['error']){
+            console.log('There was an error: ' + authResult['error']);
+        }else{
+            $('#result').html('Failed to make a server-side call. Check your configuration and console.');
+        }
+    }
+</script>
+
+{% endblock %}
