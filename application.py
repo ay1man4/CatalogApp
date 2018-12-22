@@ -1,17 +1,23 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, make_response, flash
+import random
+import string
+import httplib2
+import json
+import requests
+from flask import Flask, render_template, request, redirect
+from flask import url_for, jsonify, make_response, flash
 from flask import session as login_session
-import random, string, httplib2, json, requests
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 
 from backend import *
 
 app = Flask(__name__)
-app.config['JSON_SORT_KEYS']=False
+app.config['JSON_SORT_KEYS'] = False
 
 CLIENT_ID = json.loads(
     open('client_secrets.json', 'r').read())['web']['client_id']
 APPLICATION_NAME = "Catalog Application"
+
 
 # Web views
 @app.route('/')
@@ -19,14 +25,21 @@ APPLICATION_NAME = "Catalog Application"
 def show_catalog_html():
     categories = get_categories()
     latest_items = get_latest_items()
-    return render_template('home.html', categories=categories, latest_items=latest_items)
+    return render_template(
+                            'home.html',
+                            categories=categories, latest_items=latest_items)
+
 
 @app.route('/catalog/<category>')
 @app.route('/catalog/<category>/items')
 def show_category_html(category):
     categories = get_categories()
     active_category = get_category(category)
-    return render_template('category-items.html', categories=categories, active_category=active_category)
+    return render_template(
+                            'category-items.html',
+                            categories=categories,
+                            active_category=active_category)
+
 
 @app.route('/catalog/category/new', methods=['GET', 'POST'])
 @login_required
@@ -37,11 +50,15 @@ def new_category_html():
     else:
         return render_template('new-category.html')
 
+
 @app.route('/catalog/<category>/<item>')
 def show_item_html(category, item):
     item = get_item(category, item)
     creator, editable = isCreator(item.user_id)
-    return render_template('item.html', item=item, creator=creator, editable=editable)
+    return render_template(
+                            'item.html',
+                            item=item, creator=creator, editable=editable)
+
 
 @app.route('/catalog/<category>/new', methods=['GET', 'POST'])
 @login_required
@@ -51,9 +68,12 @@ def new_item_html(category):
         name = request.form['name']
         description = request.form['description']
         new_item(category_name, name, description)
-        return redirect(url_for('show_item_html', category=category, item=name))
+        return redirect(
+                        url_for('show_item_html', category=category, item=name)
+                        )
     else:
         return render_template('new-item.html', category=category)
+
 
 @app.route('/catalog/<category>/<item>/edit', methods=['GET', 'POST'])
 @login_required
@@ -67,11 +87,17 @@ def edit_item_html(category, item):
         description = request.form['description']
         category_name = request.form['category']
         item = edit_item(category, item, name, description, category_name)
-        return redirect(url_for('show_item_html', category=item.category.name, item=item.name))
+        return redirect(
+                        url_for('show_item_html', category=item.category.name,
+                                item=item.name)
+                        )
     else:
         categories = get_categories()
         item = get_item(category, item)
-        return render_template('edit-item.html', categories=categories, item=item)
+        return render_template(
+                                'edit-item.html',
+                                categories=categories, item=item)
+
 
 @app.route('/catalog/<category>/<item>/delete', methods=['GET', 'POST'])
 def del_item_html(category, item):
@@ -84,19 +110,24 @@ def del_item_html(category, item):
     else:
         return render_template('del-item.html')
 
+
 # JSON
 @app.route('/api/v1/')
 @app.route('/api/v1/catalog.json')
 def show_catalog_json():
     categories = get_categories()
     latest_items = get_latest_items()
-    return jsonify(Category=[c.serialize for c in categories], Latest_Items=[i.serialize for i in latest_items])
+    return jsonify(
+                    Category=[c.serialize for c in categories],
+                    Latest_Items=[i.serialize for i in latest_items])
+
 
 @app.route('/api/v1/catalog/<category>/')
 @app.route('/api/v1/catalog/<category>/items.json')
 def show_category_json(category):
     cat = get_category(category)
     return jsonify(Category=cat.serialize)
+
 
 @app.route('/api/v1/catalog/category/new', methods=['POST'])
 def new_category_json():
@@ -107,6 +138,7 @@ def new_category_json():
     else:
         return jsonify(Message='Failed to create new category!')
 
+
 @app.route('/api/v1/catalog/<category>/<item>')
 def show_item_json(category, item):
     item = get_item(category, item)
@@ -114,6 +146,7 @@ def show_item_json(category, item):
         return jsonify(Item=item.serialize)
     else:
         return jsonify(Message='Failed to find item!'), 204
+
 
 @app.route('/api/v1/catalog/<category>/new', methods=['POST'])
 def new_item_json(category):
@@ -127,6 +160,7 @@ def new_item_json(category):
     else:
         return jsonify(Message='Failed to create new item!'), 204
 
+
 @app.route('/api/v1/catalog/<category>/<item>/edit', methods=['POST'])
 def edit_item_json(category, item):
     content = request.get_json()
@@ -139,12 +173,14 @@ def edit_item_json(category, item):
     else:
         return jsonify(Message='Failed to edit item!'), 204
 
+
 @app.route('/api/v1/catalog/<category>/<item>/delete', methods=['POST'])
 def del_item_json(category, item):
     if del_item(category, item):
         return jsonify(Message='Item have been deleted!')
     else:
         return jsonify(Message='Failed to find item!'), 204
+
 
 # login
 # Create anti-forgery state token
@@ -155,11 +191,13 @@ def login():
     login_session['state'] = state
     return render_template('login.html', STATE=state)
 
+
 @app.route('/logout')
 def logout():
     if request.args.get('provider') == 'google':
         gdisconnect()
         return redirect(url_for('show_catalog_html'))
+
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
@@ -204,13 +242,15 @@ def gconnect():
             json.dumps("Token's user ID doesn't match given user ID."), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
-    
 
     # Check to see if user is already logged in
     stored_access_token = login_session.get('access_token')
     stored_gplus_id = login_session.get('gplus_id')
     if stored_access_token is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'), 200)
+        response = make_response(
+                                json.dumps(
+                                    'Current user is already connected.'),
+                                200)
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -236,21 +276,23 @@ def gconnect():
     user_id = getUserID(login_session['email'])
     if user_id is None:
         user_id = create_user()
-    
+
     login_session['user_id'] = user_id
-        
-    
+
     return make_response(json.dumps('Signed in successfully!'), 200)
+
 
 def gdisconnect():
     access_token = login_session.get('access_token')
     if access_token is None:
         clear_login_session()
-        response = make_response(json.dumps('Current user not connected.'), 401)
+        response = make_response(
+            json.dumps('Current user not connected.'),
+            401)
         response.headers['content-type'] = 'application/json'
         return response
-    
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' %access_token
+
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
     # print(url)
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
@@ -262,10 +304,11 @@ def gdisconnect():
         return response
     else:
         clear_login_session()
-        response = make_response(json.dumps('Failed to revoke token for given user.'), 400)
+        response = make_response(
+            json.dumps('Failed to revoke token for given user.'),
+            400)
         response.headers['Content-Type'] = 'application/json'
         return response
-    
 
 
 if __name__ == '__main__':
