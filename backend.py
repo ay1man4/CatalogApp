@@ -7,7 +7,9 @@ session = DBSession()
 
 
 def login_required(f):
-
+    """
+    A decorator method to check if user is logged in or not
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if login_session.get('logged_in') is None:
@@ -17,6 +19,9 @@ def login_required(f):
 
 
 def clear_login_session():
+    """
+    Clears login_session parameters after user sign out
+    """
     login_session.pop('access_token', None)
     login_session.pop('gplus_id', None)
     login_session.pop('username', None)
@@ -28,6 +33,11 @@ def clear_login_session():
 
 
 def create_user():
+    """
+    Creates new user if not exist in DB.
+    Returns:
+        User: created user instance
+    """
     newUser = User(name=login_session['username'], email=login_session[
                    'email'], picture=login_session['picture'])
     session.add(newUser)
@@ -37,19 +47,40 @@ def create_user():
 
 
 def getUserInfo(user_id):
-    user = session.query(User).filter_by(id=user_id).one()
-    return user
+    """
+    Query user if exist in DB.
+    Returns:
+        User: instance of User if exist and None if not.
+    """
+    try:
+        user = session.query(User).filter_by(id=user_id).one()
+        return user
+    except Exception as e:
+        print(e)
+        return None
 
 
 def getUserID(email):
-    user = session.query(User).filter_by(email=email).one()
-    if user:
+    """
+    Query user id if exist in DB.
+    Returns:
+        integer: user id if exist and None if not.
+    """
+    try:
+        user = session.query(User).filter_by(email=email).one()
         return user.id
-    else:
+    except Exception as e:
+        print(e)
         return None
 
 
 def isCreator(user_id):
+    """
+    Checks if current user is the creator of catalog category or item.
+    Returns:
+        boolean: True if same user is the creator, False otherwise.
+        User: the user instance of creator.
+    """
     creator = getUserInfo(user_id)
     if creator.id != login_session.get('user_id'):
         return creator, False

@@ -23,6 +23,9 @@ APPLICATION_NAME = "Catalog Application"
 @app.route('/')
 @app.route('/catalog')
 def show_catalog_html():
+    """
+    Renders list of all catalog categories with latest items added.
+    """
     categories = get_categories()
     latest_items = get_latest_items()
     return render_template(
@@ -33,6 +36,11 @@ def show_catalog_html():
 @app.route('/catalog/<category>')
 @app.route('/catalog/<category>/items')
 def show_category_html(category):
+    """
+    Renders details of one catalog category including its items.
+    Args:
+        category (str): name of category.
+    """
     categories = get_categories()
     active_category = get_category(category)
     return render_template(
@@ -44,6 +52,9 @@ def show_category_html(category):
 @app.route('/catalog/category/new', methods=['GET', 'POST'])
 @login_required
 def new_category_html():
+    """
+    Renders a form to create a new catalog category.
+    """
     if request.method == 'POST':
         new_category(name=request.form['name'])
         flash('New Category have been created!', 'alert-success')
@@ -54,6 +65,12 @@ def new_category_html():
 
 @app.route('/catalog/<category>/<item>')
 def show_item_html(category, item):
+    """
+    Renders details of one category item.
+    Args:
+        category (str): name of category.
+        item (str): name of item.
+    """
     item = get_item(category, item)
     creator, editable = isCreator(item.user_id)
     return render_template(
@@ -64,6 +81,11 @@ def show_item_html(category, item):
 @app.route('/catalog/<category>/new', methods=['GET', 'POST'])
 @login_required
 def new_item_html(category):
+    """
+    Renders a form to create a new item in a catalog category.
+    Args:
+        category (str): name of category.
+    """
     if request.method == 'POST':
         category_name = category
         name = request.form['name']
@@ -79,6 +101,12 @@ def new_item_html(category):
 @app.route('/catalog/<category>/<item>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_item_html(category, item):
+    """
+    Renders a form to edit an item in a catalog category.
+    Args:
+        category (str): name of category.
+        item (str): name of item.
+    """
     itemToEdit = get_item(category, item)
     editable = isCreator(itemToEdit.user_id)[1]
     if not editable:
@@ -105,6 +133,12 @@ def edit_item_html(category, item):
 
 @app.route('/catalog/<category>/<item>/delete', methods=['GET', 'POST'])
 def del_item_html(category, item):
+    """
+    Deletes an item in a catalog category.
+    Args:
+        category (str): name of category.
+        item (str): name of item.
+    """
     if request.method == 'POST':
         deleted = del_item(category, item)
         if not deleted:
@@ -121,6 +155,9 @@ def del_item_html(category, item):
 @app.route('/api/v1/')
 @app.route('/api/v1/catalog.json')
 def show_catalog_json():
+    """
+    Returns list of all catalog categories with latest items added in json.
+    """
     categories = get_categories()
     latest_items = get_latest_items()
     return jsonify(
@@ -131,12 +168,22 @@ def show_catalog_json():
 @app.route('/api/v1/catalog/<category>/')
 @app.route('/api/v1/catalog/<category>/items.json')
 def show_category_json(category):
+    """
+    Returns details of one catalog category including its items in json format.
+    Args:
+        category (str): name of category.
+    """
     cat = get_category(category)
     return jsonify(Category=cat.serialize)
 
 
 @app.route('/api/v1/catalog/category/new', methods=['POST'])
 def new_category_json():
+    """
+    Creates a new catalog category. It accepts post parameters in json format.
+    Args:
+        name (str): name of category
+    """
     content = request.get_json()
     if content is not None and 'name' in content:
         category = new_category(content['name'])
@@ -147,6 +194,12 @@ def new_category_json():
 
 @app.route('/api/v1/catalog/<category>/<item>')
 def show_item_json(category, item):
+    """
+    Returns details of one category item in json format.
+    Args:
+        category (str): name of category.
+        item (str): name of item.
+    """
     item = get_item(category, item)
     if Item is not None:
         return jsonify(Item=item.serialize)
@@ -156,6 +209,12 @@ def show_item_json(category, item):
 
 @app.route('/api/v1/catalog/<category>/new', methods=['POST'])
 def new_item_json(category):
+    """
+    Creates a new item in a catalog category. It accepts post parameters in json.
+    Args:
+        name (str): name of item.
+        description (str): description of item.
+    """
     content = request.get_json()
     if content is not None and 'name' in content and 'description' in content:
         category_name = category
@@ -169,6 +228,13 @@ def new_item_json(category):
 
 @app.route('/api/v1/catalog/<category>/<item>/edit', methods=['POST'])
 def edit_item_json(category, item):
+    """
+    Edits an item in a catalog category. It accepts post parameters in json.
+    Args:
+        name (str): new name of item.
+        description (str): new description of item.
+        category (str): new name of category.
+    """
     content = request.get_json()
     if content is not None and 'name' in content and 'description' in content:
         name = content['name']
@@ -182,6 +248,12 @@ def edit_item_json(category, item):
 
 @app.route('/api/v1/catalog/<category>/<item>/delete', methods=['POST'])
 def del_item_json(category, item):
+    """
+    Deletes an item in a catalog category.
+    Args:
+        category (str): name of category.
+        item (str): name of item.
+    """
     if del_item(category, item):
         return jsonify(Message='Item have been deleted!')
     else:
@@ -192,6 +264,9 @@ def del_item_json(category, item):
 # Create anti-forgery state token
 @app.route('/login')
 def login():
+    """
+    Sign in/Register new user using third party providers.
+    """
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                     for x in range(32))
     login_session['state'] = state
@@ -200,6 +275,9 @@ def login():
 
 @app.route('/logout')
 def logout():
+    """
+    Sign out user from their third party providers.
+    """
     if request.args.get('provider') == 'google':
         gdisconnect()
         flash('You have signed out successfully!', 'alert-success')
@@ -208,6 +286,9 @@ def logout():
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
+    """
+    sign in using Google Account.
+    """
     # Validate state token
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
@@ -297,6 +378,9 @@ def gconnect():
 
 
 def gdisconnect():
+    """
+    sign out from Google Account.
+    """
     access_token = login_session.get('access_token')
     if access_token is None:
         clear_login_session()
