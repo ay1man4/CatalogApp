@@ -46,6 +46,7 @@ def show_category_html(category):
 def new_category_html():
     if request.method == 'POST':
         new_category(name=request.form['name'])
+        flash('New Category have been created!', 'alert-success')
         return redirect(url_for('show_catalog_html'))
     else:
         return render_template('new-category.html')
@@ -68,9 +69,9 @@ def new_item_html(category):
         name = request.form['name']
         description = request.form['description']
         new_item(category_name, name, description)
+        flash('New Item have been created!', 'alert-success')
         return redirect(
-                        url_for('show_item_html', category=category, item=name)
-                        )
+                        url_for('show_category_html', category=category))
     else:
         return render_template('new-item.html', category=category)
 
@@ -81,16 +82,16 @@ def edit_item_html(category, item):
     itemToEdit = get_item(category, item)
     editable = isCreator(itemToEdit.user_id)[1]
     if not editable:
+        flash('Failed to edit the item!', 'alert-danger')
         return render_template('access-denied.html')
     if request.method == 'POST':
         name = request.form['name']
         description = request.form['description']
         category_name = request.form['category']
         item = edit_item(category, item, name, description, category_name)
+        flash('Item has been edited successfully!', 'alert-success')
         return redirect(
-                        url_for('show_item_html', category=item.category.name,
-                                item=item.name)
-                        )
+                        url_for('show_category_html', category=item.category.name))
     else:
         categories = get_categories()
         item = get_item(category, item)
@@ -104,8 +105,10 @@ def del_item_html(category, item):
     if request.method == 'POST':
         deleted = del_item(category, item)
         if not deleted:
+            flash('Failed to delete the item!', 'alert-danger')
             return render_template('access-denied.html')
         else:
+            flash('Item have been deleted successfully!', 'alert-warning')
             return redirect(url_for('show_category_html', category=category))
     else:
         return render_template('del-item.html')
@@ -196,6 +199,7 @@ def login():
 def logout():
     if request.args.get('provider') == 'google':
         gdisconnect()
+        flash('You have signed out successfully!', 'alert-success')
         return redirect(url_for('show_catalog_html'))
 
 
@@ -205,7 +209,9 @@ def gconnect():
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
         response.headers['Content-Type'] = 'application/json'
+        flash('Failed to sign in, invalid state!', 'alert-danger')
         return response
+    
     # Obtain authorization code
     code = request.data
     # print('state: ' + request.args.get('state'))
@@ -219,6 +225,7 @@ def gconnect():
         response = make_response(
             json.dumps('Failed to upgrade the authorization code.'), 401)
         response.headers['Content-Type'] = 'application/json'
+        flash('Failed to sign in, no authorization!', 'alert-danger')
         return response
 
     # Check that the access token is valid.
@@ -232,6 +239,7 @@ def gconnect():
     if result.get('error') is not None:
         response = make_response(json.dumps(result.get('error')), 500)
         response.headers['Content-Type'] = 'application/json'
+        flash('Failed to sign in, no access token!', 'alert-danger')
         return response
 
     # Verify that the access token is used for the intended user.
@@ -241,6 +249,7 @@ def gconnect():
         response = make_response(
             json.dumps("Token's user ID doesn't match given user ID."), 401)
         response.headers['Content-Type'] = 'application/json'
+        flash('Failed to sign in, Invalid token!', 'alert-danger')
         return response
 
     # Check to see if user is already logged in
@@ -252,6 +261,7 @@ def gconnect():
                                     'Current user is already connected.'),
                                 200)
         response.headers['Content-Type'] = 'application/json'
+        flash('You are already signed in!', 'alert-warning')
         return response
 
     # Store the access token in the session for later use.
@@ -276,9 +286,10 @@ def gconnect():
     user_id = getUserID(login_session['email'])
     if user_id is None:
         user_id = create_user()
+        flash('You have registered successfully!', 'alert-success')
 
     login_session['user_id'] = user_id
-
+    flash('You have signed in successfully!', 'alert-success')
     return make_response(json.dumps('Signed in successfully!'), 200)
 
 
@@ -312,6 +323,6 @@ def gdisconnect():
 
 
 if __name__ == '__main__':
-    app.secret_key = 'super_secret_key'
+    app.secret_key = 'My_super_secret_key_is_0'
     app.debug = True
     app.run(host='0.0.0.0', port=5000)
