@@ -13,6 +13,7 @@ Before using this script, you have to prepare the website environment and instal
 - Once done run `vagrant ssh` to log into linux environment
 - This website is running with sqlite3, but it can run with any DB by changing the DB engine in database_setup.py
 - If DB engine changed, you have to create the DB before using the app
+- You may start with demo Catagories using command `python3 seeder.py`
 
 ## Usage
 
