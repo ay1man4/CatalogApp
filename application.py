@@ -91,7 +91,10 @@ def edit_item_html(category, item):
         item = edit_item(category, item, name, description, category_name)
         flash('Item has been edited successfully!', 'alert-success')
         return redirect(
-                        url_for('show_category_html', category=item.category.name))
+                        url_for(
+                                'show_category_html',
+                                category=item.category.name)
+                        )
     else:
         categories = get_categories()
         item = get_item(category, item)
@@ -211,7 +214,7 @@ def gconnect():
         response.headers['Content-Type'] = 'application/json'
         flash('Failed to sign in, invalid state!', 'alert-danger')
         return response
-    
+
     # Obtain authorization code
     code = request.data
     # print('state: ' + request.args.get('state'))
