@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Catalog{% endblock %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5>Access Denied</h5>
+            </div>
+            <div class="card-body">
+                <p>You are not permitted to edit or delete an item created by another user. Create a new item and gain full control on it.</p>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

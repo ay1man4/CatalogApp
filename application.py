@@ -58,24 +58,16 @@ def new_item_html(category):
 @app.route('/catalog/<category>/<item>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_item_html(category, item):
+    itemToEdit = get_item(category, item)
+    editable = isCreator(itemToEdit.user_id)[1]
+    if not editable:
+        return render_template('access-denied.html')
     if request.method == 'POST':
         name = request.form['name']
         description = request.form['description']
         category_name = request.form['category']
         item = edit_item(category, item, name, description, category_name)
-        creator, editable = isCreator(item.user_id)
-        if not editable:
-            return """
-                <script>
-                    function myFunction() {
-                        alert('You are not authorized to edit this item. 
-                            Please create your own item in order to edit.');
-                    }
-                </script>
-                <body onload='myFunction()'>
-                """
-        else:
-            return redirect(url_for('show_item_html', category=item.category.name, item=item.name))
+        return redirect(url_for('show_item_html', category=item.category.name, item=item.name))
     else:
         categories = get_categories()
         item = get_item(category, item)
@@ -86,15 +78,7 @@ def del_item_html(category, item):
     if request.method == 'POST':
         deleted = del_item(category, item)
         if not deleted:
-            return """
-                <script>
-                    function myFunction() {
-                        alert('You are not authorized to delete this item. 
-                            Please create your own item in order to delete.');
-                    }
-                </script>
-                <body onload='myFunction()'>
-                """
+            return render_template('access-denied.html')
         else:
             return redirect(url_for('show_category_html', category=category))
     else:
@@ -261,6 +245,7 @@ def gconnect():
 def gdisconnect():
     access_token = login_session.get('access_token')
     if access_token is None:
+        clear_login_session()
         response = make_response(json.dumps('Current user not connected.'), 401)
         response.headers['content-type'] = 'application/json'
         return response
@@ -271,21 +256,16 @@ def gdisconnect():
     result = h.request(url, 'GET')[0]
 
     if result['status'] == '200':
-        login_session.pop('access_token', None)
-        login_session.pop('gplus_id', None)
-        login_session.pop('username', None)
-        login_session.pop('email', None)
-        login_session.pop('picture', None)
-        login_session.pop('provider', None)
-        login_session.pop('user_id', None)
-        login_session.pop('logged_in', None)
+        clear_login_session()
         response = make_response(json.dumps('Successfully disconnected.'), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
     else:
+        clear_login_session()
         response = make_response(json.dumps('Failed to revoke token for given user.'), 400)
         response.headers['Content-Type'] = 'application/json'
         return response
+    
 
 
 if __name__ == '__main__':

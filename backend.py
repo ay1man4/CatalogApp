@@ -13,6 +13,15 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def clear_login_session():
+    login_session.pop('access_token', None)
+    login_session.pop('gplus_id', None)
+    login_session.pop('username', None)
+    login_session.pop('email', None)
+    login_session.pop('picture', None)
+    login_session.pop('provider', None)
+    login_session.pop('user_id', None)
+    login_session.pop('logged_in', None)
 
 def create_user():
     newUser = User(name=login_session['username'], email=login_session[
@@ -49,12 +58,16 @@ def get_category(category):
     return session.query(Category).filter(Category.name==category).first()
 
 def new_category(name):
-    category = Category()
-    category.name = name
-    category.user_id = login_session['user_id']
-    session.add(category)
-    session.commit()
-    return session.query(Category).filter(Category.name==name).first()
+    category = session.query(Category).filter(Category.name==name).first()
+    if category is None:
+        category = Category()
+        category.name = name
+        category.user_id = login_session['user_id']
+        session.add(category)
+        session.commit()
+        return session.query(Category).filter(Category.name==name).first()
+    else:
+        return category
 
 def get_category_items(category):
     return session.query(Category.items).filter(Category.name == category)
