@@ -8,12 +8,22 @@ from sqlalchemy import create_engine
  
 Base = declarative_base()
 
+class User(Base):
+    __tablename__ = 'user'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(200), nullable=True)
+    picture = Column(String(255), nullable=True)
+
 class Category(Base):
     __tablename__ = 'category'
    
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
     items = relationship('Item')
+    user_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship(User)
 
     @property
     def items_count(self):
@@ -38,6 +48,9 @@ class Item(Base):
 
     category_id = Column(Integer,ForeignKey('category.id'))
     category = relationship(Category)
+
+    user_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship(User)
 
     @property
     def serialize(self):

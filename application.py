@@ -19,18 +19,17 @@ APPLICATION_NAME = "Catalog Application"
 def show_catalog_html():
     categories = get_categories()
     latest_items = get_latest_items()
-    user = login_session.get('username')
-    return render_template('home.html', categories=categories, latest_items=latest_items, user=user)
+    return render_template('home.html', categories=categories, latest_items=latest_items)
 
 @app.route('/catalog/<category>')
 @app.route('/catalog/<category>/items')
 def show_category_html(category):
     categories = get_categories()
     active_category = get_category(category)
-    user = login_session.get('username')
-    return render_template('category-items.html', user=user, categories=categories, active_category=active_category)
+    return render_template('category-items.html', categories=categories, active_category=active_category)
 
 @app.route('/catalog/category/new', methods=['GET', 'POST'])
+@login_required
 def new_category_html():
     if request.method == 'POST':
         new_category(name=request.form['name'])
@@ -41,9 +40,11 @@ def new_category_html():
 @app.route('/catalog/<category>/<item>')
 def show_item_html(category, item):
     item = get_item(category, item)
-    return render_template('item.html', item=item)
+    creator, editable = isCreator(item.user_id)
+    return render_template('item.html', item=item, creator=creator, editable=editable)
 
 @app.route('/catalog/<category>/new', methods=['GET', 'POST'])
+@login_required
 def new_item_html(category):
     if request.method == 'POST':
         category_name = category
@@ -55,13 +56,25 @@ def new_item_html(category):
         return render_template('new-item.html', category=category)
 
 @app.route('/catalog/<category>/<item>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_item_html(category, item):
     if request.method == 'POST':
-        if request.method == 'POST':
-            name = request.form['name']
-            description = request.form['description']
-            category_name = request.form['category']
-            item = edit_item(category, item, name, description, category_name)
+        name = request.form['name']
+        description = request.form['description']
+        category_name = request.form['category']
+        item = edit_item(category, item, name, description, category_name)
+        creator, editable = isCreator(item.user_id)
+        if not editable:
+            return """
+                <script>
+                    function myFunction() {
+                        alert('You are not authorized to edit this item. 
+                            Please create your own item in order to edit.');
+                    }
+                </script>
+                <body onload='myFunction()'>
+                """
+        else:
             return redirect(url_for('show_item_html', category=item.category.name, item=item.name))
     else:
         categories = get_categories()
@@ -71,19 +84,98 @@ def edit_item_html(category, item):
 @app.route('/catalog/<category>/<item>/delete', methods=['GET', 'POST'])
 def del_item_html(category, item):
     if request.method == 'POST':
-        del_item(category, item)
-        return redirect(url_for('show_category_html', category=category))
+        deleted = del_item(category, item)
+        if not deleted:
+            return """
+                <script>
+                    function myFunction() {
+                        alert('You are not authorized to delete this item. 
+                            Please create your own item in order to delete.');
+                    }
+                </script>
+                <body onload='myFunction()'>
+                """
+        else:
+            return redirect(url_for('show_category_html', category=category))
     else:
         return render_template('del-item.html')
+
+# JSON
+@app.route('/api/v1/')
+@app.route('/api/v1/catalog.json')
+def show_catalog_json():
+    categories = get_categories()
+    latest_items = get_latest_items()
+    return jsonify(Category=[c.serialize for c in categories], Latest_Items=[i.serialize for i in latest_items])
+
+@app.route('/api/v1/catalog/<category>/')
+@app.route('/api/v1/catalog/<category>/items.json')
+def show_category_json(category):
+    cat = get_category(category)
+    return jsonify(Category=cat.serialize)
+
+@app.route('/api/v1/catalog/category/new', methods=['POST'])
+def new_category_json():
+    content = request.get_json()
+    if content is not None and 'name' in content:
+        category = new_category(content['name'])
+        return jsonify(Category=category.serialize), 201
+    else:
+        return jsonify(Message='Failed to create new category!')
+
+@app.route('/api/v1/catalog/<category>/<item>')
+def show_item_json(category, item):
+    item = get_item(category, item)
+    if Item is not None:
+        return jsonify(Item=item.serialize)
+    else:
+        return jsonify(Message='Failed to find item!'), 204
+
+@app.route('/api/v1/catalog/<category>/new', methods=['POST'])
+def new_item_json(category):
+    content = request.get_json()
+    if content is not None and 'name' in content and 'description' in content:
+        category_name = category
+        name = content['name']
+        description = content['description']
+        item = new_item(category_name, name, description)
+        return jsonify(Item=item.serialize)
+    else:
+        return jsonify(Message='Failed to create new item!'), 204
+
+@app.route('/api/v1/catalog/<category>/<item>/edit', methods=['POST'])
+def edit_item_json(category, item):
+    content = request.get_json()
+    if content is not None and 'name' in content and 'description' in content:
+        name = content['name']
+        description = content['description']
+        category_name = content['category']
+        item = edit_item(category, item, name, description, category_name)
+        return jsonify(Item=item.serialize)
+    else:
+        return jsonify(Message='Failed to edit item!'), 204
+
+@app.route('/api/v1/catalog/<category>/<item>/delete', methods=['POST'])
+def del_item_json(category, item):
+    if del_item(category, item):
+        return jsonify(Message='Item have been deleted!')
+    else:
+        return jsonify(Message='Failed to find item!'), 204
 
 # login
 # Create anti-forgery state token
 @app.route('/login')
-def showLogin():
+def login():
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                     for x in range(32))
     login_session['state'] = state
     return render_template('login.html', STATE=state)
+
+@app.route('/logout')
+def logout():
+    if request.args.get('provider') == 'google':
+        gdisconnect()
+        return redirect(url_for('show_catalog_html'))
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
@@ -150,13 +242,22 @@ def gconnect():
     data = answer.json()
     print(data)
 
+    login_session['logged_in'] = True
+    login_session['provider'] = 'google'
     login_session['username'] = data['name']
     login_session['picture'] = data['picture']
-    login_session['email'] = data.get('email', None)
+    login_session['email'] = data.get('email')
+
+    # Check existing users, add if new
+    user_id = getUserID(login_session['email'])
+    if user_id is None:
+        user_id = create_user()
+    
+    login_session['user_id'] = user_id
+        
     
     return make_response(json.dumps('Signed in successfully!'), 200)
 
-@app.route('/gdisconnect')
 def gdisconnect():
     access_token = login_session.get('access_token')
     if access_token is None:
@@ -175,75 +276,17 @@ def gdisconnect():
         login_session.pop('username', None)
         login_session.pop('email', None)
         login_session.pop('picture', None)
+        login_session.pop('provider', None)
+        login_session.pop('user_id', None)
+        login_session.pop('logged_in', None)
         response = make_response(json.dumps('Successfully disconnected.'), 200)
         response.headers['Content-Type'] = 'application/json'
-        return redirect(url_for('show_catalog_html'))
+        return response
     else:
         response = make_response(json.dumps('Failed to revoke token for given user.'), 400)
         response.headers['Content-Type'] = 'application/json'
         return response
 
-# JSON
-@app.route('/api/v1/')
-@app.route('/api/v1/catalog.json')
-def show_catalog_json():
-    categories = get_categories()
-    latest_items = get_latest_items()
-    return jsonify(Category=[c.serialize for c in categories], Latest_Items=[i.serialize for i in latest_items])
-
-@app.route('/api/v1/catalog/<category>/')
-@app.route('/api/v1/catalog/<category>/items.json')
-def show_category_json(category):
-    cat = get_category(category)
-    return jsonify(Category=cat.serialize)
-
-@app.route('/api/v1/catalog/category/new', methods=['POST'])
-def new_category_json():
-    content = request.get_json()
-    if content is not None and 'name' in content:
-        category = new_category(content['name'])
-        return jsonify(Category=category.serialize), 201
-    else:
-        return jsonify(Message='Failed to create new category!')
-
-@app.route('/api/v1/catalog/<category>/<item>')
-def show_item_json(category, item):
-    item = get_item(category, item)
-    if Item is not None:
-        return jsonify(Item=item.serialize)
-    else:
-        return jsonify(Message='Failed to find item!'), 204
-
-@app.route('/api/v1/catalog/<category>/new', methods=['POST'])
-def new_item_json(category):
-    content = request.get_json()
-    if content is not None and 'name' in content and 'description' in content:
-        category_name = category
-        name = content['name']
-        description = content['description']
-        item = new_item(category_name, name, description)
-        return jsonify(Item=item.serialize)
-    else:
-        return jsonify(Message='Failed to create new item!'), 204
-
-@app.route('/api/v1/catalog/<category>/<item>/edit', methods=['POST'])
-def edit_item_json(category, item):
-    content = request.get_json()
-    if content is not None and 'name' in content and 'description' in content:
-        name = content['name']
-        description = content['description']
-        category_name = content['category']
-        item = edit_item(category, item, name, description, category_name)
-        return jsonify(Item=item.serialize)
-    else:
-        return jsonify(Message='Failed to edit item!'), 204
-
-@app.route('/api/v1/catalog/<category>/<item>/delete', methods=['POST'])
-def del_item_json(category, item):
-    if del_item(category, item):
-        return jsonify(Message='Item have been deleted!')
-    else:
-        return jsonify(Message='Failed to find item!'), 204
 
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'

@@ -14,9 +14,14 @@
             </div>
             <div class="card-body">
                 <p>{{ item.description }}</p>
+                {% if editable %}
                 <a href="{{url_for('edit_item_html', category=item.category.name, item=item.name)}}">Edit</a>
                 <span> | </span>
                 <a href="{{url_for('del_item_html', category=item.category.name, item=item.name)}}">Delete</a>
+                {% endif %}
+            </div>
+            <div class="card-footer text-muted">
+                    Created by <i>{{creator.name}}</i>
             </div>
         </div>
 
