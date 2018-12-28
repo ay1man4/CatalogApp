@@ -1,3 +1,4 @@
+import os
 import random
 import string
 import httplib2
@@ -14,8 +15,10 @@ from backend import *
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CLIENT_SECRETS_FILE = os.path.join(BASE_DIR, 'client_secrets.json')
 CLIENT_ID = json.loads(
-    open('client_secrets.json', 'r').read())['web']['client_id']
+    open(CLIENT_SECRETS_FILE, 'r').read())['web']['client_id']
 APPLICATION_NAME = "Catalog Application"
 
 
@@ -210,7 +213,8 @@ def show_item_json(category, item):
 @app.route('/api/v1/catalog/<category>/new', methods=['POST'])
 def new_item_json(category):
     """
-    Creates a new item in a catalog category. It accepts post parameters in json.
+    Creates a new item in a catalog category.
+    It accepts post parameters in json.
     Args:
         name (str): name of item.
         description (str): description of item.
