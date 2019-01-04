@@ -8,8 +8,6 @@ class Config(object):
 
     # Put any configurations here that are common across all environments
     CSRF_ENABLED = True
-    SECRET_KEY = b'\xfe=Hzo\xd1\x9bY_hW1\n\x07\xc6\xff'
-    SQLALCHEMY_DATABASE_URI = 'postgresql://ayman:ayman@localhost:5432/catalog'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
@@ -43,7 +41,6 @@ class TestingConfig(Config):
     """
     Testing configurations
     """
-    SQLALCHEMY_DATABASE_URI = 'postgresql://vagrant:vagrant@localhost:5432/catalogdb'
     TESTING = True
 
 app_config = {
