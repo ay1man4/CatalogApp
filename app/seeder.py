@@ -1,5 +1,5 @@
 # seeder will create sample database
-from database_setup import DBSession, Category, Item, User
+from app.database_setup import DBSession, Category, Item, User
 
 session = DBSession()
 

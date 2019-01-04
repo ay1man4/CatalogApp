@@ -1,9 +1,9 @@
-from database_setup import DBSession, Category, Item, User
+# from app.database_setup import DBSession, Category, Item, User
+from app.models import Category, Item, User
 from sqlalchemy import desc
 from functools import wraps
 from flask import request, redirect, url_for, session as login_session
-
-session = DBSession()
+from app import db
 
 
 def login_required(f):
@@ -13,7 +13,7 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if login_session.get('logged_in') is None:
-            return redirect(url_for('login', next=request.url))
+            return redirect(url_for('auth.login', next=request.url))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -40,9 +40,9 @@ def create_user():
     """
     newUser = User(name=login_session['username'], email=login_session[
                    'email'], picture=login_session['picture'])
-    session.add(newUser)
-    session.commit()
-    user = session.query(User).filter_by(email=login_session['email']).one()
+    db.session.add(newUser)
+    db.session.commit()
+    user = User.query.filter_by(email=login_session['email']).one()
     return user.id
 
 
@@ -53,7 +53,7 @@ def getUserInfo(user_id):
         User: instance of User if exist and None if not.
     """
     try:
-        user = session.query(User).filter_by(id=user_id).one()
+        user = User.query.filter_by(id=user_id).one()
         return user
     except Exception as e:
         print(e)
@@ -67,7 +67,7 @@ def getUserID(email):
         integer: user id if exist and None if not.
     """
     try:
-        user = session.query(User).filter_by(email=email).one()
+        user = User.query.filter_by(email=email).one()
         return user.id
     except Exception as e:
         print(e)
@@ -88,57 +88,57 @@ def isCreator(user_id):
 
 
 def show_catalog():
-    return session.query(Category).all()
+    return Category.query.all()
 
 
 def get_categories():
-    return session.query(Category).all()
+    return Category.query.all()
 
 
 def get_category(category):
-    return session.query(Category).filter(Category.name == category).first()
+    return Category.query.filter(Category.name == category).first()
 
 
 def new_category(name):
-    category = session.query(Category).filter(Category.name == name).first()
+    category = Category.query.filter(Category.name == name).first()
     if category is None:
         category = Category()
         category.name = name
         category.user_id = login_session['user_id']
-        session.add(category)
-        session.commit()
+        db.session.add(category)
+        db.session.commit()
 
-        return session.query(Category).filter(Category.name == name).first()
+        return Category.query.filter(Category.name == name).first()
     else:
 
         return category
 
 
 def get_category_items(category):
-    return session.query(Category.items).filter(Category.name == category)
+    return Category.items.query.filter(Category.name == category)
 
 
 def get_item(category, item):
-    cat = session.query(Category).filter(Category.name == category).first()
-    return session.query(Item)\
+    cat = Category.query.filter(Category.name == category).first()
+    return Item.query\
         .filter(Item.category == cat, Item.name == item).first()
 
 
 def get_latest_items():
-    return session.query(Item).order_by(desc('created_at')).limit(10)
+    return Item.query.order_by(desc('created_at')).limit(10)
 
 
 def new_item(category_name, name, description):
-    category = session.query(Category)\
+    category = Category.query\
             .filter(Category.name == category_name).first()
     item = Item()
     item.name = name
     item.description = description
     item.category = category
     item.user_id = login_session['user_id']
-    session.add(item)
-    session.commit()
-    return session.query(Item)\
+    db.session.add(item)
+    db.session.commit()
+    return Item.query\
         .filter(Item.category == category, Item.name == name).first()
 
 
@@ -146,31 +146,31 @@ def edit_item(
                 old_category_name, old_item_name,
                 name, description, category_name):
 
-    old_category = session.query(Category)\
+    old_category = Category.query\
         .filter(Category.name == old_category_name).first()
-    item = session.query(Item)\
+    item = Item.query\
         .filter(Item.category == old_category, Item.name == old_item_name)\
         .first()
     item.name = name
     item.description = description
-    category = session.query(Category)\
+    category = Category.query\
         .filter(Category.name == category_name).first()
     item.category = category
-    session.add(item)
-    session.commit()
-    return session.query(Item)\
+    db.session.add(item)
+    db.session.commit()
+    return Item.query\
         .filter(Item.category == category, Item.name == name).first()
 
 
 def del_item(category_name, item_name):
-    category = session.query(Category)\
+    category = Category.query\
         .filter(Category.name == category_name).first()
-    item = session.query(Item)\
+    item = Item.query\
         .filter(Item.category == category, Item.name == item_name).first()
     creator, editable = isCreator(item.user_id)
     if item is not None and editable:
-        session.delete(item)
-        session.commit()
+        db.session.delete(item)
+        db.session.commit()
         return True
     else:
         return False

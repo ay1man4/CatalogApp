@@ -3,10 +3,6 @@
 {% block title %}Catalog{% endblock %}
 {% block head %}
 {{ super() }}
-<!--LOAD PRE-REQUISITES FOR GOOGLE SIGN IN -->
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-<script src="//apis.google.com/js/platform.js?onload=start"></script>
-<!-- END PRE-REQUISITES FOR GOOGLE SIGN IN -->
 {% endblock %}
 
 {% block content %}
@@ -26,21 +22,18 @@
         {% endwith %}
     </div>
 </div>
-
 <div class="row">
     <div class="col-4">
         <div class="card mb-3">
-            <div class="card-header d-flex justify-content-between">
+            <div class="card-header">
                 <h5>Categories</h5>
-                <a class="btn btn-primary btn-sm" href="{{url_for('new_category_html')}}">
-                    <i class="fas fa-plus-square"></i>
-                    New
-                </a>
             </div>
             <div class="card-body px-0 py-0">
                 <div class="list-group">
                     {% for category in categories %}
-                    <a href="{{ url_for('show_category_html', category=category.name) }}" class="list-group-item list-group-item-action">{{category.name}}</a>
+                    <a href="{{ url_for('home.show_category_html', category=category.name) }}" class="list-group-item list-group-item-action {% if category.name==active_category.name %} list-group-item-primary {% endif %}">
+                        {{category.name}}
+                    </a>
                     {% endfor %}
                 </div>
             </div>
@@ -48,16 +41,22 @@
 
     </div>
     <div class="col-8">
-        <div class="card mb-3">
+        <div class="card bg-light mb-3">
             <div class="card-header d-flex justify-content-between">
-                <h5>Latest Items</h5>
+                <h5>{{ active_category.name }} Items ({{ active_category.items_count }} items)</h5>
+                <a class="btn btn-primary btn-sm" href="{{url_for('home.new_item_html', category=active_category.name)}}">
+                    <i class="fas fa-plus-square"></i>
+                    New
+                </a>
             </div>
             <div class="card-body px-0 py-0">
-                <ul class="list-group">
-                    {% for item in latest_items %}
-                    <li class="list-group-item">{{item.name}} <span style="color:gray">({{item.category.name}})</span></li>
+                <div class="list-group">
+                    {% for item in active_category.items %}
+                    <a href="{{ url_for('home.show_item_html', category=active_category.name, item=item.name) }}" class="list-group-item list-group-item-action">
+                        {{item.name}}
+                    </a>
                     {% endfor %}
-                </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -65,10 +64,9 @@
 
 <!-- Auto dismiss alerts after 4 sec -->
 <script>
-    $(".alert").delay(4000).slideUp(200, function () {
-        $(this).alert('close');
-    });
-</script>
-
+        $(".alert").delay(4000).slideUp(200, function () {
+            $(this).alert('close');
+        });
+    </script>
 
 {% endblock %}

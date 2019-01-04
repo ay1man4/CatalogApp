@@ -1,15 +1,12 @@
-import os
-import sys
 import datetime
-from sqlalchemy import Column, ForeignKey, Integer, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
-from sqlalchemy import create_engine
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from app import db
 
-Base = declarative_base()
-
-
-class User(Base):
+class User(db.Model):
+    """
+    Create a User table
+    """
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
@@ -17,8 +14,14 @@ class User(Base):
     email = Column(String(200), nullable=False)
     picture = Column(String(255), nullable=True)
 
+    def __repr__(self):
+        return '<User: {}>'.format(self.name)
 
-class Category(Base):
+
+class Category(db.Model):
+    """
+    Create a Category table
+    """
     __tablename__ = 'category'
 
     id = Column(Integer, primary_key=True)
@@ -39,9 +42,16 @@ class Category(Base):
             'items_count': self.items_count,
             'items': [i.serialize for i in self.items],
         }
+    
+
+    def __repr__(self):
+        return '<Category: {}>'.format(self.name)
 
 
-class Item(Base):
+class Item(db.Model):
+    """
+    Create a Item table
+    """
     __tablename__ = 'item'
 
     id = Column(Integer, primary_key=True)
@@ -65,6 +75,5 @@ class Item(Base):
         }
 
 
-engine = create_engine('sqlite:///db.db?check_same_thread=False')
-Base.metadata.create_all(engine)
-DBSession = sessionmaker(bind=engine)
+    def __repr__(self):
+        return '<Item: {}>'.format(self.name)

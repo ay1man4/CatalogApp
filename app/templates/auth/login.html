@@ -63,14 +63,14 @@
             $.ajax(
                 {
                     type: 'POST',
-                    url: "{{ url_for('gconnect', state=STATE) }}",
+                    url: "{{ url_for('auth.gconnect', state=STATE) }}",
                     processData: false,
                     data: authResult['code'],
                     contentType: 'application/octet-stream; charset=utf-8',
                     success: function(result) {
                         // Handle or verify the server response if necessary.
                         if(result){
-                            window.location.href = "{{ url_for('show_catalog_html') }}";
+                            window.location.href = "{{ url_for('home.show_catalog_html') }}";
                         }
                     }
                 }
