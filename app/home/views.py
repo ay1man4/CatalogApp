@@ -142,6 +142,7 @@ def del_item_html(category, item):
             return render_template('access-denied.html')
         else:
             flash('Item have been deleted successfully!', 'alert-warning')
-            return redirect(url_for('home.show_category_html', category=category))
+            return redirect(url_for('home.show_category_html',
+                            category=category))
     else:
         return render_template('home/del-item.html')

@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app import db
 
+
 class User(db.Model):
     """
     Create a User table
@@ -42,7 +43,6 @@ class Category(db.Model):
             'items_count': self.items_count,
             'items': [i.serialize for i in self.items],
         }
-    
 
     def __repr__(self):
         return '<Category: {}>'.format(self.name)
@@ -73,7 +73,6 @@ class Item(db.Model):
             'description': self.description,
             'cat_id': self.category_id,
         }
-
 
     def __repr__(self):
         return '<Item: {}>'.format(self.name)

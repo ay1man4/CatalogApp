@@ -10,6 +10,7 @@ from config import app_config
 # db variable initialization
 db = SQLAlchemy()
 
+
 def create_app(config_name):
     if config_name is None:
         config_name = 'development'
@@ -21,7 +22,7 @@ def create_app(config_name):
         os.makedirs(app.instance_path)
     except OSError:
         pass
-    
+
     app.config.from_pyfile('config.py')
 
     db.init_app(app)
@@ -55,5 +56,4 @@ def create_app(config_name):
     def internal_server_error(error):
         return render_template('errors/500.html', title='Server Error'), 500
 
-    
     return app

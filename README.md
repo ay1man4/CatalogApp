@@ -30,6 +30,23 @@ Items creation, edition and deletion can be accomplished by the website as well 
 - **Edit Item**: `POST /api/v1/catalog/<category>/<item>/edit`, *category* and *item* are the name of category and item. Also, make sure to include new item name, description and category in the body
 - **Delete Item**: `POST /api/v1/catalog/<category>/<item>/delete`, *category* is the name of category. Warning: deletion is not reversible.
 
+## Deployment
+
+App have been deployed in Amazon Lightsail server. It can be accessed using the following info:
+- **IP address**: http://54.91.177.105
+- **URL**: http://54.91.177.105.xip.io
+
+Below is the list libraries installed in venv to run the App:
+- Flask==1.0.2
+- Flask-Migrate==2.3.1
+- Flask-SQLAlchemy==2.3.2
+- Flask-Testing==0.7.1
+- httplib2==0.12.0
+- oauth2client==4.1.3
+- psycopg2-binary==2.7.6.1
+- requests==2.21.0
+- SQLAlchemy==1.2.15
+
 ## License
 
 This is free and unencumbered software released into the public domain.
